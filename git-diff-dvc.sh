@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -eo pipefail
 
 # echo "git-diff-dvc.sh ($#):"
 # for arg in "$@"; do
@@ -84,13 +84,25 @@ trap cleanup EXIT
 reldir="$(dirname "$relpath")"
 name="$(basename "$relpath")"
 
-tmpdir0="$tmpdir/0/$reldir"
-tmpdir1="$tmpdir/1/$reldir"
-mkdir -p "$tmpdir0" "$tmpdir1"
-tmppath0="$tmpdir0/$name"
-tmppath1="$tmpdir1/$name"
-ln -s "$PWD/$path0" "$tmppath0"
-ln -s "$PWD/$path1" "$tmppath1"
+init_tmppath() {
+  # Create a hard link to a local DVC cache path, in a temporary directory, with basename matching the file's path in
+  # the Git worktree. This helps `git diff` apply further custom diff logic (based on path / extension in the Git
+  # worktree), which it can't do if we just diff two paths like `.dvc/cache/files/md5/<MD5>`,
+  local path="$1"
+  local idx="$2"
+  if [ "$path" == /dev/null ]; then
+    echo /dev/null
+  else
+    local dir="$tmpdir/$idx/$reldir"
+    mkdir -p "$dir"
+    local tmppath="$dir/$name"
+    ln "$PWD/$path" "$tmppath"
+    echo "$tmppath"
+  fi
+}
+
+tmppath0=$(init_tmppath "$path0" 0)
+tmppath1=$(init_tmppath "$path1" 1)
 cmd=(git diff --no-index --ext-diff "$tmppath0" "$tmppath1")
 # echo "git-diff-dvc.sh running ${cmd[*]}" >&2
 set +e
