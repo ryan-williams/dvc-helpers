@@ -59,17 +59,17 @@ defn ddcc dvc-diff -c -R
 defn ddcr dvc-diff -c -R
 defn ddcrs dvc-diff -c -r
 defn ddr dvc-diff -R
+defn ddrr dvc-diff -r
 defn ddrs dvc-diff -r
 defn dvdc dvc-diff -c
 defn dvdcr dvc-diff -cr
 defn dvdr dvc-diff -R
+defn dvdrr dvc-diff -r
 defn dvdrs dvc-diff -r
 defn dvdv dvc-diff -v
-defn dvdh dvc-diff -r HEAD
-defn dvdph dvc-diff -r 'HEAD^..HEAD'
+defn dvdh dvc-diff -R HEAD
 defn dvdw dvc-diff -w
-defn dvdwh dvc-diff -w -r HEAD
-defn dvdwph dvc-diff -w -r 'HEAD^..HEAD'
+defn dvdwh dvc-diff -w -R HEAD
 defn dvud dvc-diff
 
 # ls
