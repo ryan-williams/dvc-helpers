@@ -2,6 +2,9 @@
 
 set -eo pipefail
 
+err() {
+  echo "$*" >&2
+}
 # echo "git-diff-dvc.sh ($#):"
 # for arg in "$@"; do
 #   echo "  $arg"
@@ -11,7 +14,7 @@ set -eo pipefail
 if [ "$#" -eq 7 ]; then
   dvc_path="$1"; shift  # repo dvc_path
   if ! [[ $dvc_path =~ .dvc$ ]]; then
-      echo "Error: repo dvc_path $dvc_path must end in .dvc" >&2
+      err "Error: repo dvc_path $dvc_path must end in .dvc"
       exit 1
   fi
   relpath="${dvc_path%.dvc}"
@@ -62,6 +65,7 @@ if [ "$#" -eq 7 ]; then
       echo "--- $f0 $m0"
       echo "+++ $f1 $m1"
       "$0" "$rel" "$f0" "$f1"
+      echo
     done
     exit 0
   fi
@@ -70,13 +74,13 @@ elif [ $# -eq 3 ]; then
   path0="$1"; shift
   path1="$1"; shift
 else
-  echo "Usage: $0 <repo dvc_path> <old version tmpfile> <old hexsha> <old filemode> <new version tmpfile> <new hexsha> <new filemode>" >&2
+  err "Usage: $0 <repo dvc_path> <old version tmpfile> <old hexsha> <old filemode> <new version tmpfile> <new hexsha> <new filemode>"
   exit 1
 fi
 
 tmpdir=$(mktemp -d)
 cleanup() {
-  # echo "Cleaning up $tmpdir" >&2
+  # err "Cleaning up $tmpdir"
   rm -rf "$tmpdir"
 }
 trap cleanup EXIT
@@ -104,7 +108,7 @@ init_tmppath() {
 tmppath0=$(init_tmppath "$path0" 0)
 tmppath1=$(init_tmppath "$path1" 1)
 cmd=(git diff --no-index --ext-diff "$tmppath0" "$tmppath1")
-# echo "git-diff-dvc.sh running ${cmd[*]}" >&2
+# err "git-diff-dvc.sh running ${cmd[*]}"
 set +e
 "${cmd[@]}"
 exit 0
