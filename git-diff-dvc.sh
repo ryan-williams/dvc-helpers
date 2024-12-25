@@ -44,21 +44,37 @@ if [ "$#" -eq 7 ]; then
   if [[ $md1 = *.dir ]] || [[ $md0 = *.dir ]]; then
     set +e
     cmd=(jq 'map({ "key": .relpath, "value": .md5 }) | from_entries')
-    obj0="$("${cmd[@]}" "$path0")"
-    obj1="$("${cmd[@]}" "$path1")"
+    if [ "$path0" == /dev/null ]; then
+      obj0='{}'
+    else
+      obj0="$("${cmd[@]}" "$path0")"
+    fi
+    if [ "$path1" == /dev/null ]; then
+      obj1='{}'
+    else
+      obj1="$("${cmd[@]}" "$path1")"
+    fi
     diff --color=always <(echo "$obj0") <(echo "$obj1")
     (echo "$obj0"; echo "$obj1") | \
     jq -rs '
       .[0] as $first | .[1] as $second |
       (($first | keys) + ($second | keys) | unique) as $allkeys |
-      $allkeys | map({ key: ., value: [$first[.] // null, $second[.] // null] }) | from_entries |
-      to_entries[] |
+      $allkeys | map({ key: ., value: [$first[.] // "null", $second[.] // "null"] })[] |
       select(.value[0] != .value[1]) |
       [ .key, .value[0], .value[1] ] | join(" ")
     ' | while read -r rel m0 m1; do
       rel="$relpath/$rel"
-      f0="$(dvc_mdf_cache_path -r "$m0")"
-      f1="$(dvc_mdf_cache_path -r "$m1")"
+#      err "rel $rel, m0 $m0, m1 $m1"
+      if [ "$m0" == null ]; then
+        f0=/dev/null
+      else
+        f0="$(dvc_mdf_cache_path -r "$m0")"
+      fi
+      if [ "$m1" == null ]; then
+        f1=/dev/null
+      else
+        f1="$(dvc_mdf_cache_path -r "$m1")"
+      fi
 #      echo "Recursing: $0 $rel $f0 $f1"
       echo
       echo "$rel"
