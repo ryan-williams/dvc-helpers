@@ -1,5 +1,5 @@
 # dvc-helpers
-Bash scripts/aliases and `git {diff,show}` plugins for [DVC] files.
+Git plugins and Bash scripts/aliases for [DVC].
 
 <!-- toc -->
 - [`git {diff,show}` plugins](#git)
@@ -9,8 +9,10 @@ Bash scripts/aliases and `git {diff,show}` plugins for [DVC] files.
         - [Update text file](#update-txt)
         - [Add Parquet file](#add-pqt)
         - [Update Parquet file](#update-pqt)
+        - [Customize `.parquet.dvc` diff with `$PQT_TXT_OPTS`](#pqt-txt-opts)
         - [Add directory, remove files](#add-dir)
         - [Update files in DVC-tracked directory](#update-dir)
+    - [Diff-pipelining with `dvc-utils` / `dvc-diff`](#dvc-utils)
 - [Other Bash DVC scripts/aliases](#aliases)
 <!-- /toc -->
 
@@ -37,7 +39,7 @@ echo "*.dvc diff=dvc" >> .gitattributes
 ```
 
 ### Examples <a id="examples"></a>
-Using commits from the [@test] branch:
+Examples below use commits from the [@test] branch, and are verified in GitHub Actions by [`ci.yml`] and [`docker.yml`]:
 
 #### Add text file <a id="add-txt"></a>
 [`8ec2060`] added a DVC-tracked text file, `test.txt` (with `test.txt.dvc` committed to Git):
@@ -337,11 +339,12 @@ index fcfac0e..8721b78 100644
 ```
 </details>
 
-[`$PQT_TXT_OPTS`] can be used to customize how Parquet files are converted to text (before being compared):
+#### Customize `.parquet.dvc` diff with `$PQT_TXT_OPTS` <a id="pqt-txt-opts"></a>
+[`git-diff-parquet.sh`] supports [`$PQT_TXT_OPTS`] for customizing how Parquet files are converted to text (before being compared):
 
 <!-- `bmdff -stdiff -EPQT_TXT_OPTS="-sn -1" -- git diff f29e52a^..f29e52a -- test.parquet.dvc` -->
 ```bash
-PQT_TXT_OPTS=-sn -1 git diff 'f29e52a^..f29e52a' -- test.parquet.dvc
+"PQT_TXT_OPTS=-sn -1" git diff 'f29e52a^..f29e52a' -- test.parquet.dvc
 ```
 ```diff
 test.parquet
@@ -367,7 +370,8 @@ a/test.parquet..b/test.parquet
 
 ```
 
-`-s` renders one object per line (instead of one field), and `-n -1` means "print all the rows" (before a diff is performed).
+- `-s` renders one object per line (instead of one field)
+- `-n -1` means "print all the rows" (before a diff is performed)
 
 #### Add directory, remove files <a id="add-dir"></a>
 [`3257258`] moved `test.txt` and `test.parquet` into a new DVC-tracked directory, `data/` (with tracking file `data.dvc`):
@@ -693,6 +697,11 @@ index 065a6f3..34e93bb 100644
          print(f"{i}", file=f)
 ```
 
+### Diff-pipelining with [`dvc-utils`] / [`dvc-diff`] <a id="dvc-utils"></a>
+
+Sometimes diffs of DVC-tracked blobs are too complex to grok with a generic file-type-based diffs (like [`git-diff-parquet.sh`], as used above).
+
+The [`dvc-utils`] package provides a [`dvc-diff`] CLI that supports applying arbitrary bash pipelines to DVC-tracked blobs, before `diff`ing them. See its [examples][dvc-diff examples] for more info.
 
 ## Other Bash DVC scripts/aliases <a id="aliases"></a>
 [`.dvc-rc`] can be `source`d from `~/.bashrc`, and provides useful aliases, e.g.:
@@ -704,6 +713,11 @@ index 065a6f3..34e93bb 100644
 [DVC]: https://dvc.org/
 [`git-diff-dvc.sh`]: ./git-diff-dvc.sh
 [`git-textconv-dvc.sh`]: ./git-textconv-dvc.sh
+[`ci.yml`]: .github/workflows/ci.yml
+[`docker.yml`]: .github/workflows/docker.yml
+[`dvc-utils`]: https://pypi.org/project/dvc-utils/
+[`dvc-diff`]: https://github.com/runsascoded/dvc-utils?tab=readme-ov-file#dvc-diff
+[dvc-diff examples]: https://github.com/runsascoded/dvc-utils?tab=readme-ov-file#examples
 
 [@test]: https://github.com/ryan-williams/dvc-helpers/tree/test
 [`8ec2060`]: https://github.com/ryan-williams/dvc-helpers/commit/8ec2060
