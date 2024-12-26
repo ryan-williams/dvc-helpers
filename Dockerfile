@@ -1,7 +1,13 @@
 # Example Dockerfile that installs and configures `git-diff-dvc.sh` and `git-diff-parquet.sh`, and
-# verifies the examples in the README
+# verifies the examples in the README:
+#
+# AWS creds can go in `.aws/credentials` (in this repo, untracked) and passed to the build like:
+# ```bash
+# docker build --secret id=aws_credentials,src=$PWD/.aws/credentials -t git-diff-dvc .
+# ```
+
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y curl git jq python3 python3-pip python3-venv wget yq
+RUN apt-get update && apt-get install -y curl file git jq python3 python3-pip python3-venv wget yq
 
 ENV PATH=/root/.cargo/bin:$PATH
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
@@ -10,7 +16,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
 ENV VIRTUAL_ENV=.venv
 ENV PATH=/$VIRTUAL_ENV/bin:$PATH
 RUN python3 -m venv $VIRTUAL_ENV \
- && pip3 install 'bmdf>=0.3.3' 'qmdx>=0.0.4' dvc-s3
+ && pip3 install 'bmdf>=0.3.5' dvc-s3
 
 SHELL ["/bin/bash", "-c"]
 
@@ -24,7 +30,9 @@ WORKDIR /src/dvc
 ENV PATH=/src/dvc:$PATH
 
 COPY . .
-COPY .aws/credentials /root/.aws/credentials
+RUN --mount=type=secret,id=aws_credentials \
+    mkdir -p /root/.aws && \
+    cp /run/secrets/aws_credentials /root/.aws/credentials
 RUN echo "*.parquet diff=parquet" > .gitattributes
 RUN git config diff.parquet.command git-diff-parquet.sh
 RUN git config diff.parquet.textconv "parquet2json-all -n2"
@@ -39,6 +47,5 @@ RUN echo ". /src/dvc/.dvc-rc" >> /root/.bashrc
 RUN echo "*.dvc diff=dvc" >> .gitattributes
 RUN git config diff.dvc.command git-diff-dvc.sh
 RUN git config diff.dvc.textconv git-textconv-dvc.sh
-RUN apt-get install -y file
 
 ENTRYPOINT [ "/bin/bash", "-ic", "mdcmd && git diff --exit-code" ]
