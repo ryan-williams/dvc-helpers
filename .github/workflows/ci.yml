@@ -1,0 +1,58 @@
+name: Verify README examples
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.11.8
+        cache: pip
+        cache-dependency-path: .github/workflows/requirements.txt
+    - name: 'Fetch `test` branch for README examples'
+      run: git fetch origin test:test
+    - run: pip install -r .github/workflows/requirements.txt
+    - run: |
+        branch="$(git symbolic-ref -q --short HEAD)"
+        git checkout test
+        dvc pull -r s3 -R -A
+        git checkout "$branch"
+    - name: Use git-diff-dvc.sh to diff .dvc files
+      run: |
+        echo "${{ github.workspace }}" >> $GITHUB_PATH
+        echo "*.dvc diff=dvc" >> .gitattributes
+        git config diff.dvc.command git-diff-dvc.sh
+        git config diff.dvc.textconv git-textconv-dvc.sh
+        git config diff.noprefix true     # Remove "a/" and "b/" prefixes in diff/show output
+    - uses: dtolnay/rust-toolchain@stable
+    - uses: Swatinem/rust-cache@v2
+    - run: cargo install parquet2json
+    - uses: actions/checkout@v4
+      with:
+        repository: ryan-williams/parquet-helpers
+        path: pqt
+    - name: Use git-diff-parquet.sh to diff .parquet files
+      run: |
+        echo "*.parquet diff=parquet" >> .gitattributes
+        echo "${{ github.workspace }}/pqt" >> $GITHUB_PATH
+        git config diff.parquet.command git-diff-parquet.sh
+        git config diff.parquet.textconv "parquet2json-all -n2"
+    - name: Verify README examples
+      run: |
+        . pqt/.pqt-rc
+        . .dvc-rc
+        export SHELL
+        mdcmd
+        git diff --exit-code
+    - name: Verify README TOC
+      run: |
+        mktoc
+        git diff --exit-code
