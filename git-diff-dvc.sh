@@ -91,40 +91,59 @@ elif [ $# -eq 3 ]; then
   path1="$1"; shift
 else
   err "Usage: $0 <repo dvc_path> <old version tmpfile> <old hexsha> <old filemode> <new version tmpfile> <new hexsha> <new filemode>"
+  err "$0 called with $# args:"
+  for arg in "$@"; do
+    err "  $arg"
+  done
   exit 1
 fi
 
 tmpdir=$(mktemp -d)
-cleanup() {
-  # err "Cleaning up $tmpdir"
-  rm -rf "$tmpdir"
-}
-trap cleanup EXIT
+trap "rm -rf $tmpdir" EXIT
 
 reldir="$(dirname "$relpath")"
 name="$(basename "$relpath")"
+
+# We want to diff `$path0` and `$path1`, which are paths to blobs in the repo's local DVC cache (`.dvc/cache/files/md5/…`).
+# Since they're not directly tracked by Git, we have to diff them using the `git diff --no-index` flag (we have to use
+# `git diff`, as opposed to just `diff`, because we still want to inherit Git configs/attributes (especially: custom
+# diff drivers).
+#
+# Diff drivers are matched based on glob patterns in `.gitattributes`, so the paths we pass to `git diff --no-index`
+# should mimic the "relpath" of the original file in the repo (e.g. `test.parquet`, the file DVC is tracking). We
+# achieve that by creating a hard link to the blob in a temporary directory, with a path that matches the file's path in
+# the Git worktree.
+#
+# Finally, `git diff --no-index` will display the paths we pass to it, so it's nicer to `cd` into the tmpdir "root", and
+# then perform the `git diff` on relative paths `a/<relpath>` and `b/<relpath>` (where `<relpath>` is the path to the
+# DVC-tracked file in the Git worktree). The prefixes are necessary to avoid the two links being at the same location,
+# and "a/" and "b/" match Git's defaults.
+
+orig_dir="$PWD"
+cd "$tmpdir"
 
 init_tmppath() {
   # Create a hard link to a local DVC cache path, in a temporary directory, with basename matching the file's path in
   # the Git worktree. This helps `git diff` apply further custom diff logic (based on path / extension in the Git
   # worktree), which it can't do if we just diff two paths like `.dvc/cache/files/md5/<MD5>`,
   local path="$1"
-  local idx="$2"
+  local prefix="$2"
   if [ "$path" == /dev/null ]; then
     echo /dev/null
   else
-    local dir="$tmpdir/$idx/$reldir"
+    local dir="$tmpdir/$prefix/$reldir"
     mkdir -p "$dir"
     local tmppath="$dir/$name"
-    ln "$PWD/$path" "$tmppath"
-    echo "$tmppath"
+    ln "$orig_dir/$path" "$tmppath"
+    echo "$prefix/$relpath"
   fi
 }
 
-tmppath0=$(init_tmppath "$path0" 0)
-tmppath1=$(init_tmppath "$path1" 1)
-cmd=(git diff --no-index --ext-diff "$tmppath0" "$tmppath1")
-# err "git-diff-dvc.sh running ${cmd[*]}"
+prefix0=a
+prefix1=b
+tmppath0=$(init_tmppath "$path0" $prefix0)
+tmppath1=$(init_tmppath "$path1" $prefix1)
+
 set +e
-"${cmd[@]}"
+GIT_DIR="$orig_dir/.git" git diff --no-index --ext-diff "$tmppath0" "$tmppath1"
 exit 0
