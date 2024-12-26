@@ -5,11 +5,58 @@ set -eo pipefail
 err() {
   echo "$*" >&2
 }
-# echo "git-diff-dvc.sh ($#):"
-# for arg in "$@"; do
-#   echo "  $arg"
-# done
-# echo
+
+script_name="$(basename "$0")"
+usage() {
+  err "$script_name:"
+  err
+  err '  # Invoked by `git diff`:'
+  err "  $script_name <repo relpath> <old version tmpfile> <old hexsha> <old filemode> <new version tmpfile> <new hexsha> <new filemode>"
+  err
+  err '  # Invoked by e.g. `git diff --no-index --ext-diff`:'
+  err "  $script_name <old version tmpfile> <new version tmpfile>"
+  err
+  err 'Pass opts via the $GIT_DIFF_DVC_OPTS env var:'
+  err
+  err '- `-c`: `--color=always`'
+  err '- `-C`: `--color=never`'
+  err '- `-v`: verbose/debug mode'
+  err
+  err 'The "opts var" itself ("GIT_DIFF_DVC_OPTS" by default) can also be customized, by setting `$GIT_DIFF_DVC_OPTS_VAR`, e.g.:'
+  err
+  err '  export GIT_DIFF_DVC_OPTS_VAR=GIT_DVC  # This can be done once, e.g. in your .bashrc'
+  err '  GIT_DVC="-cv" git diff                # Shorter var name can then be used to configure diffs (in this case: force colorize, enable debug logging)'
+  exit 1
+}
+
+color=()
+verbose=
+parse() {
+  while getopts "cCv" opt; do
+    case "$opt" in
+      c) color=(--color=always) ;;
+      C) color=(--color=never) ;;
+      v) verbose=1 ;;
+      \?) usage ;;
+    esac
+  done
+}
+
+OPTS_VAR="${GIT_DIFF_DVC_OPTS_VAR:-GIT_DIFF_DVC_OPTS}"
+OPTS="${!OPTS_VAR}"
+if [ -n "$OPTS" ]; then
+  IFS=' ' read -ra opts <<< "$OPTS"
+  parse "${opts[@]}"
+fi
+
+if [ -n "$verbose" ]; then
+  echo "$script_name ($#):"
+  for arg in "$@"; do
+    echo "  $arg"
+  done
+  echo
+  set -x
+fi
 
 if [ "$#" -eq 7 ]; then
   dvc_path="$1"; shift  # repo dvc_path
@@ -90,12 +137,7 @@ elif [ $# -eq 3 ]; then
   path0="$1"; shift
   path1="$1"; shift
 else
-  err "Usage: $0 <repo dvc_path> <old version tmpfile> <old hexsha> <old filemode> <new version tmpfile> <new hexsha> <new filemode>"
-  err "$0 called with $# args:"
-  for arg in "$@"; do
-    err "  $arg"
-  done
-  exit 1
+  usage
 fi
 
 tmpdir=$(mktemp -d)
@@ -141,9 +183,39 @@ init_tmppath() {
 
 prefix0=a
 prefix1=b
-tmppath0=$(init_tmppath "$path0" $prefix0)
-tmppath1=$(init_tmppath "$path1" $prefix1)
+relpath0=$(init_tmppath "$path0" $prefix0)
+relpath1=$(init_tmppath "$path1" $prefix1)
+
+# We essentially want to run:
+#
+# ```bash
+# GIT_DIR="$orig_dir/.git" GIT_WORK_TREE="$orig_dir" git diff --no-index --ext-diff "$relpath0" "$relpath1"
+# ```
+#
+# - `$GIT_DIR` picks up configs from the original repo.
+# - `$GIT_WORK_TREE` should pick up `.gitattributes` (in the root of the Git repo, not contained in `.git` / `$GIT_DIR`).
+#
+# However, on Ubuntu, something about setting the latter results in the correct diff driver not being selected (even though e.g. `git check-attr diff $relpath1` will detect it, with the env vars above set). On MacOS it seems to work as expected.
+#
+# As a workaround, we manually ask `check-attr diff` for each file's "type", and write them to `.gitattributes` in the current directory (`$tmpdir`).
+#
+# TODO: would creating `$tmpdir` in the Git worktree make this unnecessary?
+
+export GIT_DIR="$orig_dir/.git"
+
+get_attr_type() {
+    if [ -z "$1" ]; then return 0; fi
+    if [ "$1" == /dev/null ]; then return 0; fi
+    # if [ "${1:0:1}" == "/" ]; then return 0; fi
+    type="$(GIT_WORK_TREE="$orig_dir" git check-attr diff "$1" | sed -E 's/.*: diff: (.*)/\1/')"
+    if [ "$type" != "unset" ] && [ "$type" != "unspecified" ]; then
+	echo "$1 diff=$type" >> .gitattributes
+    fi
+}
+
+get_attr_type "$relpath0"
+get_attr_type "$relpath1"
 
 set +e
-GIT_DIR="$orig_dir/.git" git diff --no-index --ext-diff "$tmppath0" "$tmppath1"
+git diff "${color[@]}" --no-index --ext-diff "$relpath0" "$relpath1"
 exit 0
