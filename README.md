@@ -1,5 +1,5 @@
 # dvc-helpers
-Bash scripts/aliases and `git {diff,show}` plugins for [DVC] files.
+Git plugins and Bash scripts/aliases for [DVC].
 
 <!-- toc -->
 - [`git {diff,show}` plugins](#git)

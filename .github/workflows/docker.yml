@@ -1,0 +1,32 @@
+name: Verify example Ubuntu Docker Build + Test
+on:
+  workflow_dispatch:
+jobs:
+  verify-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git fetch origin test:test
+      - uses: docker/setup-buildx-action@v3
+      - name: Create AWS credentials file
+        run: |
+          mkdir -p .aws
+          cat <<EOF >.aws/credentials
+          [default]
+          aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          EOF
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: git-diff-dvc
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          secret-files: |
+            aws_credentials=.aws/credentials
+      - name: Run container (verify README examples)
+        run: docker run --rm git-diff-dvc
