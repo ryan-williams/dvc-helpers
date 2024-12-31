@@ -204,13 +204,12 @@ relpath1=$(init_tmppath "$path1" $prefix1)
 export GIT_DIR="$orig_dir/.git"
 
 get_attr_type() {
-    if [ -z "$1" ]; then return 0; fi
-    if [ "$1" == /dev/null ]; then return 0; fi
-    # if [ "${1:0:1}" == "/" ]; then return 0; fi
-    type="$(GIT_WORK_TREE="$orig_dir" git check-attr diff "$1" | sed -E 's/.*: diff: (.*)/\1/')"
-    if [ "$type" != "unset" ] && [ "$type" != "unspecified" ]; then
+  if [ -z "$1" ]; then return 0; fi
+  if [ "$1" == /dev/null ]; then return 0; fi
+  type="$(GIT_WORK_TREE="$orig_dir" git check-attr diff "$1" | sed -E 's/.*: diff: (.*)/\1/')"
+  if [ "$type" != "unset" ] && [ "$type" != "unspecified" ]; then
 	echo "$1 diff=$type" >> .gitattributes
-    fi
+  fi
 }
 
 get_attr_type "$relpath0"
