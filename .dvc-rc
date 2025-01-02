@@ -344,6 +344,20 @@ dvc_size() {
 export -f dvc_size
 defn dvz dvc_size
 
+dvc_nfiles() {
+    if [ $# -eq 0 ]; then
+        yq '.outs[] | .nfiles // 1'
+    elif [ $# -eq 1 ] ; then
+        yq '.outs[] | .nfiles // 1' "$1"
+    else
+        for path in "$@"; do
+            dvc_nfiles "$path"
+        done | jq -n '[ inputs ] | add'
+    fi
+}
+export -f dvc_nfiles
+defn dvn dvc_nfiles
+
 dvc_size_human() {
     dvc_size "$@" | numfmt --to=iec
 }
