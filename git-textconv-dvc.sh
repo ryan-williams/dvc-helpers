@@ -5,7 +5,7 @@ set -e
 err() {
   echo "$0: $*" >&2
 }
-# err "$0 ($#):"
+# err "$# args:"
 # for arg in "$@"; do
 #   err "  $arg"
 # done
@@ -51,9 +51,8 @@ echo
 echo "$name" "$blob_path"
 diff_driver=$(git check-attr diff "$name" | sed -E 's/.*: diff: (.*)/\1/')
 if [ "$diff_driver" != "unset" ] && [ "$diff_driver" != "unspecified" ]; then
-  textconv_cmd="$(git config "diff.${diff_driver}.textconv")"
+  textconv_cmd="$(git config "diff.${diff_driver}.textconv" || true)"
   if [ -n "$textconv_cmd" ]; then
-    # echo "Running:"
     $textconv_cmd "$blob_path"
     exit $?
   fi
