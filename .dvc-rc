@@ -332,9 +332,9 @@ defn dpr dvc_local_cache_path_ref
 
 dvc_size() {
     if [ $# -eq 0 ]; then
-        yq '.outs | map(.size)[] | add'
+        yq '.outs | map(.size)[] as $item ireduce (0; . + $item)'
     elif [ $# -eq 1 ] ; then
-        yq '.outs | map(.size) | add' "$1"
+        yq '.outs | map(.size)[] as $item ireduce (0; . + $item)' "$1"
     else
         for path in "$@"; do
             dvc_size "$path"
