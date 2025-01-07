@@ -43,7 +43,7 @@ Examples below use commits from the [@test] branch, and are verified in GitHub A
 
 #### Add text file <a id="add-txt"></a>
 [`8ec2060`] added a DVC-tracked text file, `test.txt` (with `test.txt.dvc` committed to Git):
-<!-- `bmdff -stdiff git diff 8ec2060^..8ec2060` -->
+<!-- `bmdff -Atdiff git diff 8ec2060^..8ec2060` -->
 ```bash
 git diff '8ec2060^..8ec2060'
 ```
@@ -76,7 +76,7 @@ index 0000000..f00c965
 +10
 ```
 
-<!-- `bmdfff -stdiff git show 8ec2060` -->
+<!-- `bmdfff -Atdiff git show 8ec2060` -->
 <details><summary><code>git show 8ec2060</code></summary>
 
 ```diff
@@ -117,7 +117,7 @@ index 0000000..f8af2ea
 
 #### Update text file <a id="update-txt"></a>
 [`0455b50`] appended some lines to `test.txt`:
-<!-- `bmdff -stdiff git diff 0455b50^..0455b50` -->
+<!-- `bmdff -Atdiff git diff 0455b50^..0455b50` -->
 ```bash
 git diff '0455b50^..0455b50'
 ```
@@ -140,7 +140,7 @@ index f00c965..97b3d1a 100644
 +15
 ```
 
-<!-- `bmdfff -stdiff git show 0455b50` -->
+<!-- `bmdfff -Atdiff git show 0455b50` -->
 <details><summary><code>git show 0455b50</code></summary>
 
 ```diff
@@ -176,7 +176,7 @@ index f8af2ea..0ceff0b 100644
 #### Add Parquet file <a id="add-pqt"></a>
 `git-diff-dvc.sh` delegates to other diff drivers that you can configure, for file types (based on path names). For example, if [`git-diff-parquet.sh`] is configured, you get a nice rendering of [`f92c1d2`] adding `test.parquet`;
 
-<!-- `bmdff -stdiff -- git diff f92c1d2^..f92c1d2 -- test.parquet.dvc` -->
+<!-- `bmdff -Atdiff -- git diff f92c1d2^..f92c1d2 -- test.parquet.dvc` -->
 ```bash
 git diff 'f92c1d2^..f92c1d2' -- test.parquet.dvc
 ```
@@ -207,7 +207,7 @@ index 0000000..918850d
 +}
 ```
 
-<!-- `bmdfff -stdiff git show f92c1d2` -->
+<!-- `bmdfff -Atdiff git show f92c1d2` -->
 <details><summary><code>git show f92c1d2</code></summary>
 
 ```diff
@@ -266,7 +266,7 @@ index 0000000..fcfac0e
 #### Update Parquet file <a id="update-pqt"></a>
 [`f29e52a`] updated `test.parquet`, appending 3 rows and changing a dtype (from `int64` to `int32`):
 
-<!-- `bmdff -stdiff -- git diff f29e52a^..f29e52a -- test.parquet.dvc` -->
+<!-- `bmdff -Atdiff -- git diff f29e52a^..f29e52a -- test.parquet.dvc` -->
 ```bash
 git diff 'f29e52a^..f29e52a' -- test.parquet.dvc
 ```
@@ -291,7 +291,7 @@ a/test.parquet..b/test.parquet
 ```
 
 
-<!-- `bmdfff -stdiff git show f29e52a` -->
+<!-- `bmdfff -Atdiff git show f29e52a` -->
 <details><summary><code>git show f29e52a</code></summary>
 
 ```diff
@@ -342,7 +342,7 @@ index fcfac0e..8721b78 100644
 #### Customize `.parquet.dvc` diff with `$PQT_TXT_OPTS` <a id="pqt-txt-opts"></a>
 [`git-diff-parquet.sh`] supports [`$PQT_TXT_OPTS`] for customizing how Parquet files are converted to text (before being compared):
 
-<!-- `bmdff -stdiff -EPQT_TXT_OPTS="-sn -1" -- git diff f29e52a^..f29e52a -- test.parquet.dvc` -->
+<!-- `bmdff -Atdiff -EPQT_TXT_OPTS="-sn -1" -- git diff f29e52a^..f29e52a -- test.parquet.dvc` -->
 ```bash
 "PQT_TXT_OPTS=-sn -1" git diff 'f29e52a^..f29e52a' -- test.parquet.dvc
 ```
@@ -376,7 +376,7 @@ a/test.parquet..b/test.parquet
 #### Add directory, remove files <a id="add-dir"></a>
 [`3257258`] moved `test.txt` and `test.parquet` into a new DVC-tracked directory, `data/` (with tracking file `data.dvc`):
 
-<!-- `bmdff -stdiff -- git diff 3257258^..3257258 -- data.dvc` -->
+<!-- `bmdff -Atdiff -- git diff 3257258^..3257258 -- data.dvc` -->
 ```bash
 git diff '3257258^..3257258' -- data.dvc
 ```
@@ -444,7 +444,7 @@ Notice how both `data/test.{txt,parquet}` are rendered (the latter using the app
 
 The full commit also shows the previous `test.{txt,parquet}` files as deleted:
 
-<!-- `bmdfff -stdiff git show 3257258` -->
+<!-- `bmdfff -Atdiff git show 3257258` -->
 <details><summary><code>git show 3257258</code></summary>
 
 ```diff
@@ -572,7 +572,7 @@ index 0ceff0b..0000000
 #### Update files in DVC-tracked directory <a id="update-dir"></a>
 [`ae8638a`] changed values in `data/test.parquet`, and added rows to `data/test.txt`:
 
-<!-- `bmdff -stdiff -- git diff ae8638a^..ae8638a -- data.dvc` -->
+<!-- `bmdff -Atdiff -- git diff ae8638a^..ae8638a -- data.dvc` -->
 ```bash
 git diff 'ae8638a^..ae8638a' -- data.dvc
 ```
@@ -625,7 +625,7 @@ index 8b1acc1..aa44898 100644
 
 ```
 
-<!-- `bmdff -stdiff -- git show ae8638a` -->
+<!-- `bmdff -Atdiff -- git show ae8638a` -->
 ```bash
 git show ae8638a
 ```
