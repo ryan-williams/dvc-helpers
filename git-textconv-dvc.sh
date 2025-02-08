@@ -18,7 +18,11 @@ if [ $# -eq 1 ]; then
   name="$(basename "$path")"
   blob_path="$(dvc_mdf_cache_path -r "$md5")"
   if [ -z "$blob_path" ]; then
-    err "Error: dvc_path $dvc_path not found" >&2
+    err "Error: dvc_path $dvc_path not found"
+    exit 1
+  fi
+  if ! [ -s "$blob_path" ]; then
+    err "Error: DVC blob path $blob_path not found"
     exit 1
   fi
   if [[ $md5 = *.dir ]]; then
@@ -42,8 +46,8 @@ elif [ $# -eq 2 ]; then
   blob_path="$1"; shift
   # md5="$1"; shift
 else
-  err "Usage: $0 <dvc_path>" >&2
-  err "Usage: $0 <basename> <blob_path>" >&2
+  err "Usage: $0 <dvc_path>"
+  err "Usage: $0 <basename> <blob_path>"
   exit 1
 fi
 

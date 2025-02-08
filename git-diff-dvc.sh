@@ -70,7 +70,11 @@ if [ "$#" -eq 7 ]; then
     path0=/dev/null; shift
   else
     md0="$(dvc_to_md5 "$1")"; shift
-    path0="$(dvc_mdf_cache_path -r "$md0")"
+    path0="$(dvc_mdf_cache_path -r "$md0" || true)"
+    if [ -z "$path0" ]; then
+      err '"Before" path '"$path0 not found"
+      exit 1
+    fi
   fi
   hex0="$1"; shift  # old hexsha
   mode0="$1"; shift  # old filemode
@@ -79,7 +83,11 @@ if [ "$#" -eq 7 ]; then
     path1=/dev/null; shift
   else
     md1="$(dvc_to_md5 "$1")"; shift
-    path1="$(dvc_mdf_cache_path -r "$md1")"
+    path1="$(dvc_mdf_cache_path -r "$md1" || true)"
+    if [ -z "$path1" ]; then
+      err '"After" path '"$path1 not found"
+      exit 1
+    fi
   fi
   hex1="$1"; shift  # new hexsha
   mode1="$1"; shift  # old filemode
@@ -115,12 +123,20 @@ if [ "$#" -eq 7 ]; then
       if [ "$m0" == null ]; then
         f0=/dev/null
       else
-        f0="$(dvc_mdf_cache_path -r "$m0")"
+        f0="$(dvc_mdf_cache_path -r "$m0" || true)"
+        if [ -z "$f0" ]; then
+          err '"Before" MD5 not found: '"$m0"
+          exit 1
+        fi
       fi
       if [ "$m1" == null ]; then
         f1=/dev/null
       else
-        f1="$(dvc_mdf_cache_path -r "$m1")"
+        f1="$(dvc_mdf_cache_path -r "$m1" || true)"
+        if [ -z "$f1" ]; then
+          err '"After" MD5 not found: '"$m1"
+          exit 1
+        fi
       fi
 #      echo "Recursing: $0 $rel $f0 $f1"
       echo
