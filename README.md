@@ -20,6 +20,7 @@ Git plugins and Bash scripts/aliases for [DVC].
 [`git-diff-dvc.sh`] and [`git-textconv-dvc.sh`] can be used to render human-readable `git diff` and `git show` summaries of DVC-tracked files and directories.
 
 ### Setup <a id="diff-setup"></a>
+Install [`jq`] and [`yq`], then configure Git diff/show via:
 ```bash
 # From a clone of this repo: ensure git-diff-dvc.sh is on your $PATH
 echo "export PATH=$PATH:$PWD" >> ~/.bashrc && . ~/.bashrc
@@ -874,3 +875,6 @@ The [`dvc-utils`] package provides a [`dvc-diff`] CLI that supports applying arb
 
 [dvc-utils]: https://github.com/runsascoded/dvc-utils
 [`git-diff-parquet.sh`]: https://github.com/ryan-williams/parquet-helpers?tab=readme-ov-file#git-diffshow-plugins-
+
+[`jq`]: https://jqlang.org/
+[`yq`]: https://github.com/mikefarah/yq
