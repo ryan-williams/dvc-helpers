@@ -11,21 +11,28 @@ err() {
 # done
 # err
 
+dvc_path=
 if [ $# -eq 1 ]; then
   dvc_path="$1"; shift
+  dvc_path_name="$(basename "$dvc_path")"
+  if ! [ -s "$dvc_path" ]; then
+    err "Error: $dvc_path_name not found"
+    exit 0
+  fi
   md5="$(dvc_to_md5 "$dvc_path")"
   path="${dvc_path%.dvc}"
   name="$(basename "$path")"
   blob_path="$(dvc_mdf_cache_path -r "$md5")"
   if [ -z "$blob_path" ]; then
-    err "Error: dvc_path $dvc_path not found"
-    exit 1
+    err "Error: $dvc_path_name blob path not found"
+    exit 0
   fi
   if ! [ -s "$blob_path" ]; then
-    err "Error: DVC blob path $blob_path not found"
-    exit 1
+    err "Error: $dvc_path_name blob $blob_path ($md5) not found"
+    exit 0
   fi
   if [[ $md5 = *.dir ]]; then
+    cat "$dvc_path"
     jq -r '.[] | [.relpath, .md5] | join(" ")' "$blob_path" | \
     if which parallel &>/dev/null; then
       parallel -k --colsep ' ' "$0" "\$(basename "$path/"'{1}'"")" "\$(dvc_mdf_cache_path -r {2})"
@@ -41,16 +48,17 @@ if [ $# -eq 1 ]; then
     exit 0
   fi
 elif [ $# -eq 2 ]; then
-  # path="$1"; shift
   name="$1"; shift
   blob_path="$1"; shift
-  # md5="$1"; shift
 else
   err "Usage: $0 <dvc_path>"
   err "Usage: $0 <basename> <blob_path>"
   exit 1
 fi
 
+if [ -n "$dvc_path" ]; then
+  cat "$dvc_path"
+fi
 echo
 echo "$name" "$blob_path"
 diff_driver=$(git check-attr diff "$name" | sed -E 's/.*: diff: (.*)/\1/')

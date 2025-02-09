@@ -98,7 +98,12 @@ new file mode 100644
 index 0000000..f8af2ea
 --- /dev/null
 +++ test.txt.dvc
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,17 @@
++outs:
++- md5: 3b0332e02daabf31651a5a0d81ba830a
++  size: 21
++  hash: md5
++  path: test.txt
 +
 +test.txt .dvc/cache/files/md5/3b/0332e02daabf31651a5a0d81ba830a
 +1
@@ -154,14 +159,21 @@ diff --git test.txt.dvc test.txt.dvc
 index f8af2ea..0ceff0b 100644
 --- test.txt.dvc
 +++ test.txt.dvc
-@@ -1,5 +1,5 @@
+@@ -1,10 +1,10 @@
+ outs:
+-- md5: 3b0332e02daabf31651a5a0d81ba830a
+-  size: 21
++- md5: fca18e3023be1c0a6e14ca2003b1524a
++  size: 36
+   hash: md5
+   path: test.txt
  
 -test.txt .dvc/cache/files/md5/3b/0332e02daabf31651a5a0d81ba830a
 +test.txt .dvc/cache/files/md5/fc/a18e3023be1c0a6e14ca2003b1524a
  1
  2
  3
-@@ -10,3 +10,8 @@ test.txt .dvc/cache/files/md5/3b/0332e02daabf31651a5a0d81ba830a
+@@ -15,3 +15,8 @@ test.txt .dvc/cache/files/md5/3b/0332e02daabf31651a5a0d81ba830a
  8
  9
  10
@@ -189,7 +201,7 @@ new file mode 100644
 index 0000000..918850d
 --- /dev/null
 +++ b/test.parquet
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,25 @@
 +MD5: 4379600b26647a50dfcd0daa824e8219
 +1635 bytes
 +5 rows
@@ -197,6 +209,7 @@ index 0000000..918850d
 +  OPTIONAL INT64 num;
 +  OPTIONAL BYTE_ARRAY str (STRING);
 +}
++First 2 rows:
 +{
 +  "num": 111,
 +  "str": "aaa"
@@ -204,6 +217,15 @@ index 0000000..918850d
 +{
 +  "num": 222,
 +  "str": "bbb"
++}
++Last 2 rows:
++{
++  "num": 444,
++  "str": "ddd"
++}
++{
++  "num": 555,
++  "str": "eee"
 +}
 ```
 
@@ -229,7 +251,12 @@ new file mode 100644
 index 0000000..33d0760
 --- /dev/null
 +++ test.parquet.dvc
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,32 @@
++outs:
++- md5: 4379600b26647a50dfcd0daa824e8219
++  size: 1635
++  hash: md5
++  path: test.parquet
 +
 +test.parquet .dvc/cache/files/md5/43/79600b26647a50dfcd0daa824e8219
 +MD5: 4379600b26647a50dfcd0daa824e8219
@@ -239,6 +266,7 @@ index 0000000..33d0760
 +  OPTIONAL INT64 num;
 +  OPTIONAL BYTE_ARRAY str (STRING);
 +}
++First 2 rows:
 +{
 +  "num": 111,
 +  "str": "aaa"
@@ -246,6 +274,15 @@ index 0000000..33d0760
 +{
 +  "num": 222,
 +  "str": "bbb"
++}
++Last 2 rows:
++{
++  "num": 444,
++  "str": "ddd"
++}
++{
++  "num": 555,
++  "str": "eee"
 +}
 diff --git test.py test.py
 new file mode 100644
@@ -287,6 +324,18 @@ a/test.parquet..b/test.parquet
 <   OPTIONAL INT64 num;
 ---
 >   OPTIONAL INT32 num;
+19,20c19,20
+<   "num": 444,
+<   "str": "ddd"
+---
+>   "num": 777,
+>   "str": "ggg"
+23,24c23,24
+<   "num": 555,
+<   "str": "eee"
+---
+>   "num": 888,
+>   "str": "hhh"
 
 ```
 
@@ -305,7 +354,14 @@ diff --git test.parquet.dvc test.parquet.dvc
 index 33d0760..718c8cd 100644
 --- test.parquet.dvc
 +++ test.parquet.dvc
-@@ -1,10 +1,10 @@
+@@ -1,15 +1,15 @@
+ outs:
+-- md5: 4379600b26647a50dfcd0daa824e8219
+-  size: 1635
++- md5: be082c87786f3364ca9efec061a3cc21
++  size: 1622
+   hash: md5
+   path: test.parquet
  
 -test.parquet .dvc/cache/files/md5/43/79600b26647a50dfcd0daa824e8219
 -MD5: 4379600b26647a50dfcd0daa824e8219
@@ -320,7 +376,22 @@ index 33d0760..718c8cd 100644
 +  OPTIONAL INT32 num;
    OPTIONAL BYTE_ARRAY str (STRING);
  }
+ First 2 rows:
+@@ -23,10 +23,10 @@ First 2 rows:
+ }
+ Last 2 rows:
  {
+-  "num": 444,
+-  "str": "ddd"
++  "num": 777,
++  "str": "ggg"
+ }
+ {
+-  "num": 555,
+-  "str": "eee"
++  "num": 888,
++  "str": "hhh"
+ }
 diff --git test.py test.py
 index fcfac0e..8721b78 100644
 --- test.py
@@ -342,9 +413,9 @@ index fcfac0e..8721b78 100644
 #### Customize `.parquet.dvc` diff with `$PQT_TXT_OPTS` <a id="pqt-txt-opts"></a>
 [`git-diff-parquet.sh`] supports [`$PQT_TXT_OPTS`] for customizing how Parquet files are converted to text (before being compared):
 
-<!-- `bmdff -Atdiff -EPQT_TXT_OPTS="-sn -1" -- git diff f29e52a^..f29e52a -- test.parquet.dvc` -->
+<!-- `bmdff -Atdiff -EPQT_TXT_OPTS="-sn," -- git diff f29e52a^..f29e52a -- test.parquet.dvc` -->
 ```bash
-"PQT_TXT_OPTS=-sn -1" git diff 'f29e52a^..f29e52a' -- test.parquet.dvc
+PQT_TXT_OPTS=-sn, git diff 'f29e52a^..f29e52a' -- test.parquet.dvc
 ```
 ```diff
 test.parquet
@@ -371,7 +442,7 @@ a/test.parquet..b/test.parquet
 ```
 
 - `-s` renders one object per line (instead of one field)
-- `-n -1` means "print all the rows" (before a diff is performed)
+- `-n,` means "print all the rows" (before a diff is performed)
 
 #### Add directory, remove files <a id="add-dir"></a>
 [`3257258`] moved `test.txt` and `test.parquet` into a new DVC-tracked directory, `data/` (with tracking file `data.dvc`):
@@ -400,7 +471,7 @@ new file mode 100644
 index 0000000..0109fa9
 --- /dev/null
 +++ b/data/test.parquet
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,25 @@
 +MD5: c07bba3fae2b64207aa92f422506e4a2
 +1592 bytes
 +5 rows
@@ -408,6 +479,7 @@ index 0000000..0109fa9
 +  OPTIONAL INT32 num;
 +  OPTIONAL BYTE_ARRAY str (STRING);
 +}
++First 2 rows:
 +{
 +  "num": 111,
 +  "str": "aaa"
@@ -415,6 +487,15 @@ index 0000000..0109fa9
 +{
 +  "num": 222,
 +  "str": "bbb"
++}
++Last 2 rows:
++{
++  "num": 444,
++  "str": "ddd"
++}
++{
++  "num": 555,
++  "str": "eee"
 +}
 
 
@@ -467,7 +548,13 @@ new file mode 100644
 index 0000000..e9c2c3a
 --- /dev/null
 +++ data.dvc
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,45 @@
++outs:
++- md5: 639653e88148f06346d0b965fd0318cc.dir
++  size: 1612
++  nfiles: 2
++  hash: md5
++  path: data
 +
 +test.parquet .dvc/cache/files/md5/c0/7bba3fae2b64207aa92f422506e4a2
 +MD5: c07bba3fae2b64207aa92f422506e4a2
@@ -477,6 +564,7 @@ index 0000000..e9c2c3a
 +  OPTIONAL INT32 num;
 +  OPTIONAL BYTE_ARRAY str (STRING);
 +}
++First 2 rows:
 +{
 +  "num": 111,
 +  "str": "aaa"
@@ -484,6 +572,15 @@ index 0000000..e9c2c3a
 +{
 +  "num": 222,
 +  "str": "bbb"
++}
++Last 2 rows:
++{
++  "num": 444,
++  "str": "ddd"
++}
++{
++  "num": 555,
++  "str": "eee"
 +}
 +
 +test.txt .dvc/cache/files/md5/e2/0b902b49a98b1a05ed62804c757f94
@@ -502,7 +599,12 @@ deleted file mode 100644
 index 718c8cd..0000000
 --- test.parquet.dvc
 +++ /dev/null
-@@ -1,17 +0,0 @@
+@@ -1,32 +0,0 @@
+-outs:
+-- md5: be082c87786f3364ca9efec061a3cc21
+-  size: 1622
+-  hash: md5
+-  path: test.parquet
 -
 -test.parquet .dvc/cache/files/md5/be/082c87786f3364ca9efec061a3cc21
 -MD5: be082c87786f3364ca9efec061a3cc21
@@ -512,6 +614,7 @@ index 718c8cd..0000000
 -  OPTIONAL INT32 num;
 -  OPTIONAL BYTE_ARRAY str (STRING);
 -}
+-First 2 rows:
 -{
 -  "num": 111,
 -  "str": "aaa"
@@ -519,6 +622,15 @@ index 718c8cd..0000000
 -{
 -  "num": 222,
 -  "str": "bbb"
+-}
+-Last 2 rows:
+-{
+-  "num": 777,
+-  "str": "ggg"
+-}
+-{
+-  "num": 888,
+-  "str": "hhh"
 -}
 diff --git test.py test.py
 index 8721b78..065a6f3 100644
@@ -548,7 +660,12 @@ deleted file mode 100644
 index 0ceff0b..0000000
 --- test.txt.dvc
 +++ /dev/null
-@@ -1,17 +0,0 @@
+@@ -1,22 +0,0 @@
+-outs:
+-- md5: fca18e3023be1c0a6e14ca2003b1524a
+-  size: 36
+-  hash: md5
+-  path: test.txt
 -
 -test.txt .dvc/cache/files/md5/fc/a18e3023be1c0a6e14ca2003b1524a
 -1
@@ -595,14 +712,22 @@ a/data/test.parquet..b/data/test.parquet
 < MD5: c07bba3fae2b64207aa92f422506e4a2
 ---
 > MD5: f46dd86f608b1dc00993056c9fc55e6e
-9c9
+10c10
 <   "num": 111,
 ---
 >   "num": 11,
-13c13
+14c14
 <   "num": 222,
 ---
 >   "num": 22,
+19c19
+<   "num": 444,
+---
+>   "num": 44,
+23c23
+<   "num": 555,
+---
+>   "num": 55,
 
 
 
@@ -640,7 +765,15 @@ diff --git data.dvc data.dvc
 index e9c2c3a..cb8a498 100644
 --- data.dvc
 +++ data.dvc
-@@ -1,6 +1,6 @@
+@@ -1,12 +1,12 @@
+ outs:
+-- md5: 639653e88148f06346d0b965fd0318cc.dir
+-  size: 1612
++- md5: 063f561a84adbf367a10e21aa33479dd.dir
++  size: 1627
+   nfiles: 2
+   hash: md5
+   path: data
  
 -test.parquet .dvc/cache/files/md5/c0/7bba3fae2b64207aa92f422506e4a2
 -MD5: c07bba3fae2b64207aa92f422506e4a2
@@ -649,9 +782,9 @@ index e9c2c3a..cb8a498 100644
  1592 bytes
  5 rows
  message schema {
-@@ -8,15 +8,15 @@ message schema {
-   OPTIONAL BYTE_ARRAY str (STRING);
+@@ -15,24 +15,24 @@ message schema {
  }
+ First 2 rows:
  {
 -  "num": 111,
 +  "num": 11,
@@ -662,13 +795,24 @@ index e9c2c3a..cb8a498 100644
 +  "num": 22,
    "str": "bbb"
  }
+ Last 2 rows:
+ {
+-  "num": 444,
++  "num": 44,
+   "str": "ddd"
+ }
+ {
+-  "num": 555,
++  "num": 55,
+   "str": "eee"
+ }
  
 -test.txt .dvc/cache/files/md5/e2/0b902b49a98b1a05ed62804c757f94
 +test.txt .dvc/cache/files/md5/93/06ec0709cc72558045559ada26573b
  0
  1
  2
-@@ -27,3 +27,8 @@ test.txt .dvc/cache/files/md5/e2/0b902b49a98b1a05ed62804c757f94
+@@ -43,3 +43,8 @@ test.txt .dvc/cache/files/md5/e2/0b902b49a98b1a05ed62804c757f94
  7
  8
  9
