@@ -20,6 +20,18 @@ defn dcrf dvc checkout -R -f
 defn dvcrf dvc checkout -R -f
 defn dvcorl dvc checkout --relink
 
+# import-url
+defn diu dvc import-url
+defn diuf dvc import-url -f
+
+# stage
+defn dsa dvc stage add
+defn dsar dvc stage --run
+defn dsl dvc stage list
+
+# repro
+defn drep dvc repro
+
 # Fetch
 alias dvf="dvc fetch"
 
@@ -82,7 +94,6 @@ alias dvpl="dvc pull"
 alias dvplr="dvc pull -r"
 alias dvpr="dvc push -r"
 alias dvps="dvc push"
-alias dvpt="dvc status"
 alias dvr="dvc remote"
 alias dvra="dvc remote add"
 alias dra="dvc remote add"
@@ -126,9 +137,12 @@ defn dvru dvc_remote_url
 
 # Status
 alias ds="dvc data status"
+alias dss="dvc status"
+alias dds="dvc data status"
 alias dvs="dvc data status"
 alias dsg="dvc data status --granular"
 alias dvsg="dvc data status --granular"
+alias dvpt="dvc status"
 
 alias dvscj="dvc data status --json"
 dvc_data_status_jq() {
@@ -277,6 +291,8 @@ defn dvmcp dvc_mdf_cache_path
 defn m2c dvc_mdf_cache_path
 defn m2cc dvc_mdf_cache_path -c
 defn m2cr dvc_mdf_cache_path -r
+defn dmp dvc_mdf_cache_path
+defn dm5 dvc_mdf_cache_path
 
 dvc_local_cache_path() {
     local cmd=(dvc_mdf_cache_path)
