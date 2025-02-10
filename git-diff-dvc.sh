@@ -156,7 +156,7 @@ else
   usage
 fi
 
-tmpdir=$(mktemp -d)
+tmpdir="$(mktemp -d -p "$(pwd)")"
 trap "rm -rf $tmpdir" EXIT
 
 reldir="$(dirname "$relpath")"
