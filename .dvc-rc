@@ -393,7 +393,13 @@ export -f dvc_find_suffix
 defn dvfns dvc_find_suffix
 
 dvc_remote_root() {
-    dvc remote list "$@" | awk '{ print $2 }'
+    dvc remote list | \
+    if [ $# -eq 1 ]; then
+        grep "$1\t"
+    else
+        cat
+    fi | \
+    awk '{ print $2 }'
 }
 export -f dvc_remote_root
 defn dvrr dvc_remote_root
