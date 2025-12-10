@@ -222,18 +222,68 @@ dvc_to_md5() {
     else
         local spec
         for spec in "$@"; do
-            spec="${spec%.dvc}.dvc"
-            if [[ "$spec" == *:* ]]; then
-                local cmd=(git show "$spec")
-            else
-                local cmd=(cat "$spec")
+            local md5=
+            local dvc_file="${spec%.dvc}.dvc"
+
+            # Try .dvc file first (legacy format)
+            if [[ "$dvc_file" == *:* ]]; then
+                local ref="${dvc_file%:*}"
+                local path="${dvc_file#*:}"
+                if git show "$ref:$path" &>/dev/null; then
+                    local num_outs="$(git show "$ref:$path" | yq -r '.outs | length')"
+                    if [ "$num_outs" != "1" ]; then
+                        echo "$dvc_file: found $num_outs outs, expected 1" >&2
+                        return 1
+                    fi
+                    md5="$(git show "$ref:$path" | yq -r '.outs[0].md5')"
+                fi
+            elif [ -f "$dvc_file" ]; then
+                local num_outs="$(yq -r '.outs | length' "$dvc_file")"
+                if [ "$num_outs" != "1" ]; then
+                    echo "$dvc_file: found $num_outs outs, expected 1" >&2
+                    return 1
+                fi
+                md5="$(yq -r '.outs[0].md5' "$dvc_file")"
             fi
-            num_outs="$("${cmd[@]}" | yq -r '.outs | length')"
-            if [ "$num_outs" != "1" ]; then
-                echo "$spec: found $num_outs outs, expected 1" >&2
+
+            # Fall back to dvc.lock (pipeline format)
+            if [ -z "$md5" ]; then
+                local data_file="${spec%.dvc}"
+                local lock_file="dvc.lock"
+                local git_ref=
+
+                # Handle ref:path format
+                if [[ "$spec" == *:* ]]; then
+                    git_ref="${spec%:*}"
+                    data_file="${spec#*:}"
+                    data_file="${data_file%.dvc}"
+                fi
+
+                # Get dvc.lock content (from git or filesystem)
+                local lock_content=
+                if [ -n "$git_ref" ]; then
+                    if git show "$git_ref:$lock_file" &>/dev/null; then
+                        lock_content="$(git show "$git_ref:$lock_file")"
+                    fi
+                elif [ -f "$lock_file" ]; then
+                    lock_content="$(cat "$lock_file")"
+                fi
+
+                if [ -n "$lock_content" ]; then
+                    # Find stage that outputs this file
+                    local stage="$(echo "$lock_content" | yq -r ".stages | to_entries[] | select(.value.outs[]?.path == \"$data_file\") | .key" | head -1)"
+                    if [ -n "$stage" ]; then
+                        md5="$(echo "$lock_content" | yq -r ".stages[\"$stage\"].outs[] | select(.path == \"$data_file\") | .md5")"
+                    fi
+                fi
+            fi
+
+            if [ -z "$md5" ]; then
+                echo "Error: Could not find MD5 for $spec in .dvc file or dvc.lock" >&2
                 return 1
             fi
-            "${cmd[@]}" | yq -r '.outs[0].md5'
+
+            echo "$md5"
         done
     fi
 }
@@ -317,6 +367,7 @@ defn dlpa dvc_local_cache_path
 defn dlpr dvc_local_cache_path -r
 defn dvlp dvc_local_cache_path -r
 defn dvlpa dvc_local_cache_path
+defn dvsh dvc_local_cache_path -r
 
 dvc_cat() {
     if [ $# -ne 1 ]; then
